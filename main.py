@@ -10,10 +10,10 @@ from matplotlib.colors import ListedColormap, BoundaryNorm
 
 frame = 1000  # total time steps
 file_name = r'.\test.mp4'
-dim_x = 18
-dim_y = 60
+dim_x = 30
+dim_y = 30
 
-tf = 30  # fire evolution frequency
+tf = 10  # fire evolution frequency
 w = 1.05  # w is a weight for I in the paper
 ks = 0.5
 kd = 0.2
@@ -607,27 +607,33 @@ def init():
     # define exits
     exit_cells = frozenset((
         (dim_x // 2 - 1, dim_y - 1), (dim_x // 2, dim_y - 1),
-         #(dim_x - 1, dim_y // 2), (dim_x - 1, dim_y // 2 - 1),
+         (dim_x - 1, dim_y // 2), (dim_x - 1, dim_y // 2 - 1),
          (0, dim_y // 2 - 1), (0, dim_y // 2),
          (dim_x // 2 - 1, 0), (dim_x // 2, 0),
     ))
 
     # fire_cells = {(4, 4), (4, 5), (5, 4), (5, 5)}
-    rec_fire = Rectangle(int((dim_x - 2) / 2), int((dim_y - 2) / 2)-4, 1, 1)
+    rec_fire = Rectangle(int((dim_x - 2) / 2)-4, int((dim_y - 2) / 2), 1, 1)
     fire_cells = set(rec_fire.all_coordinates())
     update_fire()
     init_walls(exit_cells)
 
-    # Assign obstacle
-    obstacal = Rectangle(10, int(dim_y / 2), 6, 1)
-    init_obstal(obstacal.all_coordinates())
+    Assign obstacle
+    obstacal1 = Rectangle(10, 2 , 1, 15)
+    init_obstal(obstacal1.all_coordinates())
+
+    obstacal2 = Rectangle(23, 3, 0, 15)
+    init_obstal(obstacal2.all_coordinates())
+
+    obstacal2 = Rectangle(25, 14, 1, 10)
+    init_obstal(obstacal2.all_coordinates())
 
     # sff
     init_sff(exit_cells)
     # Assign pedestrains
     rec = Rectangle(1, 1, dim_x - 3, dim_y - 3)
-    generate_pedestrain_rand(250, rec)
-    # generate_pedestrain(((5, 1)))
+    generate_pedestrain_rand(200, rec)
+    generate_pedestrain(((5, 1)))
     print(sff)
     print(dff)
 
