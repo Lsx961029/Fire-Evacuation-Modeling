@@ -1,2 +1,3 @@
 # fire-evacuation-modeling
 This project simulate evacuation under fire senerio
+Floor field models based on cellular automata have been widely used in the study of two-dimensional planar pedestrian evacuation problems. We adopt a floor field model framework that has been widely used in the literature， introduce the effect of the fire spreading during the evacuation process and implement an extended FF model. We build a model that focuses on the behavioral features based on effects of exits, herding behavior, panic behavior， repulsive effect of fire and inertia of pedestrians.
