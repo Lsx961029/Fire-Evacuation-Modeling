@@ -8,26 +8,27 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import ListedColormap, BoundaryNorm
 
-frame = 1000  # total time steps
-file_name = r'.\test.mp4'
-dim_x = 30
-dim_y = 30
+frame = 100  # total time steps
 
-tf = 10  # fire evolution frequency
-w = 1.05  # w is a weight for I in the paper
-ks = 0.5
-kd = 0.2
-kf = 0.7 # 0.7 is appropriate after my test
-alpha = 0.2  # coeffision for diffusion
-delta = 0.2  # coeefision for decay
-myLambda = 0.5  # 0.5 # Sedation probability increase coefficient, ps: lambda increase sedation probability increase
-gamma = 30  # If distance to fire border is larger than γ , Fij = 0,
+file_name = r'.\0001.mp4'
+dim_x = 18
+dim_y = 60
+tf = 20  # fire evolution frequency
+w = 1.05  # coefficient for I in the paper
+ks = 0.5  # coefficient for dynamic field
+kd = 1  # coefficient for dynamic field
+kf = 8  # coefficient for fire field
+alpha = 0.2  # coefficient for diffusion
+delta = 0.2  # coefficient for decay
+myLambda = 0.5  # Sedation probability increase coefficient, ps: lambda increase sedation probability increase
+gamma = 30  # If distance to fire border is larger than γ , Fij = 0.
+NumofPeople = 50
 
-pedestrains = []
-visual_field = np.zeros((dim_x, dim_y))
-sff = np.zeros((dim_x, dim_y))
-dff = np.zeros((dim_x, dim_y))  # dynamic floor field
 
+# exit_cells = ()
+# visual_field = np.zeros((dim_x, dim_y))
+# sff = np.zeros((dim_x, dim_y), dtype=np.longdouble)
+# dff = np.zeros((dim_x, dim_y), dtype=np.longdouble)
 
 # initialize walls to be 99999
 def init_walls(exit_cells):
@@ -49,13 +50,13 @@ def init_obstal(obstal):
 def get_diag_neighbors(cell):
     neighbors = []
     i, j = cell
-    if i >= 1 and j >= 1 and sff[(i - 1, j - 1)] != 99999 and sff[(i + 1, j)] != 499:
+    if i >= 1 and j >= 1 and sff[(i - 1, j - 1)] != 99999:
         neighbors.append((i - 1, j - 1))
-    if i < dim_x - 1 and j < dim_y - 1 and sff[(i + 1, j + 1)] != 99999 and sff[(i + 1, j)] != 499:
+    if i < dim_x - 1 and j < dim_y - 1 and sff[(i + 1, j + 1)] != 99999:
         neighbors.append((i + 1, j + 1))
-    if i < dim_x - 1 and j >= 1 and sff[(i + 1, j - 1)] != 99999 and sff[(i + 1, j)] != 499:
+    if i < dim_x - 1 and j >= 1 and sff[(i + 1, j - 1)] != 99999:
         neighbors.append((i + 1, j - 1))
-    if i >= 1 and j < dim_y - 1 and sff[(i - 1, j + 1)] != 99999 and sff[(i + 1, j)] != 499:
+    if i >= 1 and j < dim_y - 1 and sff[(i - 1, j + 1)] != 99999:
         neighbors.append((i - 1, j + 1))
     return neighbors
 
@@ -126,7 +127,7 @@ def init_sff(exit_cells):
         for c in e_neighbor:
             if sff[c] > sqrt(2):
                 init_sff_rec(c, sqrt(2))
-    print(sff)
+    # print(sff)
     # sff = np.where(sff==99999,0,1/sff)
 
 
@@ -252,7 +253,7 @@ class Pedestrain:
 
     def step(self, decision="max"):
         assert decision == "max" or decision == "probability"
-        print("\nPedstrain: ", self.last, self.now)
+        # print("\nPedstrain: ", self.last, self.now)
         if self.now in exit_cells:  # exit successfully
             self.status = 1
             visual_field[self.now] = 0
@@ -264,7 +265,7 @@ class Pedestrain:
             self.last = self.now
 
             if random.random() > self.Pc and not self.in_catwalk():  # Pedestrian is panic
-                print("Pc:", self.Pc, self.F)
+                # print("Pc:", self.Pc, self.F)
                 neighors = get_neighbors_including_wall(self.now, 1)
                 dic = {}
                 for i in neighors:
@@ -272,7 +273,7 @@ class Pedestrain:
                                              np.array(self.closet_fire_cell) - self.now) / np.sqrt(
                         sum((np.array(i) - self.now) ** 2))
                     dic[tuple(np.array(i) - self.now)] = projection_norm
-                print(dic)
+                # print(dic)
                 dir = min(dic, key=dic.get)  # return the key of the minimum value
                 temp = tuple(self.now + np.array(dir))
                 while visual_field[temp] != 0 or temp in occupied_cells:  # find aviliable cell
@@ -280,7 +281,7 @@ class Pedestrain:
                     if not dic:  # dic is empty, stay
                         occupied_cells.append(self.now)
                         visual_field[self.now] = 998
-                        print(self.now)
+                        # print(self.now)
                         return 0
                     dir = min(dic, key=dic.get)
                     temp = tuple(self.now + np.array(dir))
@@ -288,13 +289,13 @@ class Pedestrain:
                 self.update_xy()
                 occupied_cells.append(self.now)
                 visual_field[self.now] = 998
-                print(self.now)
+                # print(self.now)
 
             else:
-                print("\n S:\n", self.get_S(), "\n I:\n", self.I, "\n n:\n",
-                      self.n,
-                      "\n epsilon:\n", self.epsilon,
-                      "\n F:\n", self.F, "\n D:\n", self.get_D(), "\n P: \n", self.P)
+                # print("\n S:\n", self.get_S(), "\n I:\n", self.I, "\n n:\n",
+                #       self.n,
+                #       "\n epsilon:\n", self.epsilon,
+                #       "\n F:\n", self.F, "\n D:\n", self.get_D(), "\n P: \n", self.P)
                 if decision == "probability":
                     index = np.random.choice(9, p=self.P.flatten())
                     indexes = [i for i, x in np.ndenumerate(self.P)]
@@ -310,7 +311,7 @@ class Pedestrain:
                     self.update_xy()
                     occupied_cells.append(self.now)
                     visual_field[self.now] = 999
-                    print(self.now)
+                    # print(self.now)
                 else:
                     max = np.max(self.P)
                     index = np.where(self.P == max)
@@ -333,7 +334,7 @@ class Pedestrain:
                     self.update_xy()
                     occupied_cells.append(self.now)
                     visual_field[self.now] = 999
-                    print(self.now)
+                    # print(self.now)
 
         if self.last != self.now:
             dff[self.last] += 1
@@ -354,6 +355,10 @@ class Pedestrain:
             kf * self.F)
         sum = np.sum(self.P)
         self.P = self.P / sum
+        # print("\n S:\n", self.get_S(), "\n I:\n", self.I, "\n n:\n",
+        #       self.n,
+        #       "\n epsilon:\n", self.epsilon,
+        #       "\n F:\n", self.F, "\n D:\n", self.get_D(), "\n P: \n", self.P)
 
     @staticmethod
     def update_cell():
@@ -389,7 +394,7 @@ class Pedestrain:
         return neighbors
 
     def update_F(self):  # fire floor field, 0 means out of range
-        self.F = np.zeros((3, 3))
+        self.F = np.zeros((3, 3), dtype=np.longdouble)
         neighbors = get_neighbors_including_wall(self.now, 1)
         x = self.x - 1
         y = self.y - 1
@@ -470,7 +475,6 @@ class Pedestrain:
 
     def get_S(self):
         s = sff[self.x - 1:self.x + 2, self.y - 1:self.y + 2]
-        print(s)
         s = s[1, 1] - s
         for i in range(3):
             for j in range(3):
@@ -483,23 +487,27 @@ class Pedestrain:
         if np.sum(d) == 0:
             return d
         else:
-            return d / np.sum(d)  # normalize dff
+            d = d / np.sum(d)
+            return d  # normalize dff
 
     def in_catwalk(self):  # decide if pedestrian is in a catwalk, return T, F
         obstacle = self.epsilon
         count = (obstacle == 1).sum()
-        print(obstacle)
+        # print(obstacle)
         if count <= 4:
             return True
         return False
 
 
 def generate_pedestrain_rand(num, rectangle):
-    random.seed(3)
+    # random.seed(3)
     pedestrain_cells = random.sample(rectangle.all_coordinates(), num)
     for i in pedestrain_cells:
         if visual_field[i] == 0:
             pedestrains.append(Pedestrain(i))
+        else:
+            generate_pedestrain_rand(1, rectangle)
+    # random.seed(datetime.now())
 
 
 def generate_pedestrain(x):  # x is a tuple|Rectangle
@@ -515,12 +523,12 @@ def generate_pedestrain(x):  # x is a tuple|Rectangle
         pedestrains.append(Pedestrain(x))
 
 
-# Statistic variable
-time = []
-left = []
-dead = []
-exited = []
-panic = []
+# # Statistic variable
+# time = []
+# left = []
+# dead = []
+# exited = []
+# panic = []
 
 
 def record(frame):
@@ -537,20 +545,20 @@ def record(frame):
             count_dead += 1
 
     count_panic = (visual_field == 998).sum()
-    time.append(frame)
-    left.append(count)
-    dead.append(count_dead)
-    exited.append(count_exited)
-    panic.append(count_panic)
+    time = np.append(time, frame)
+    left = np.append(left, count)
+    dead = np.append(dead, count_dead)
+    exited = np.append(exited, count_exited)
+    panic = np.append(panic, count_panic)
 
 
 def plot():
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(20, 10))
     ax.set_xlabel('time step')
     ax.set_ylabel('num of people')
     ax.plot(time, left,
             color='b',
-            linewidth=1.0,
+            linewidth=1.5,
             label="people left"
             )
     ax.plot(time, dead,
@@ -572,6 +580,26 @@ def plot():
     plt.savefig(file_name[:-3] + "png")
 
 
+def sep_plot(fig, ax, color, mylabel):
+    ax[0][0].plot(time, left,
+                  color=color,
+                  linewidth=1.0,
+                  label=mylabel
+                  )
+    ax[0][1].plot(time, dead,
+                  color=color,
+                  linewidth=1.0
+                  )
+    ax[1][0].plot(time, exited,
+                  color=color,
+                  linewidth=1.0
+                  )
+    ax[1][1].plot(time, panic,
+                  color=color,
+                  linewidth=1.0
+                  )
+
+
 # Animation
 def Update(frame, img, ax):
     record(frame)
@@ -590,8 +618,9 @@ def animate():
     Cmap = ListedColormap(['w', 'r', 'm', 'g', 'k', 'peru'])
     boundary_norm = BoundaryNorm([-0.5, 498.5, 499.5, 998.5, 999.5, 1000.5, 99999.5], Cmap.N)
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(20, 10))
     ax.axis('off')
+    visual_field = np.zeros((dim_x, dim_y))
     img = ax.imshow(visual_field, cmap=Cmap, interpolation='nearest', norm=boundary_norm)
 
     ani = animation.FuncAnimation(fig, Update, fargs=(img, ax,), init_func=init,
@@ -600,42 +629,56 @@ def animate():
                                   repeat=False)
     f = file_name
     ani.save(f, writer='ffmpeg', fps=1)
+    plot()
 
 
 def init():
-    global fire_cells, exit_cells
+    global fire_cells, exit_cells, time, left, dead, exited, panic, pedestrains, visual_field, sff, dff
+    pedestrains = []
+    visual_field = np.zeros((dim_x, dim_y))
+    sff = np.zeros((dim_x, dim_y), dtype=np.longdouble)
+    dff = np.zeros((dim_x, dim_y), dtype=np.longdouble)  # dynamic floor field
+    time = np.array([])
+    left = np.array([])
+    dead = np.array([])
+    exited = np.array([])
+    panic = np.array([])
     # define exits
     exit_cells = frozenset((
-        (dim_x // 2 - 1, dim_y - 1), (dim_x // 2, dim_y - 1),
-         (dim_x - 1, dim_y // 2), (dim_x - 1, dim_y // 2 - 1),
-         (0, dim_y // 2 - 1), (0, dim_y // 2),
-         (dim_x // 2 - 1, 0), (dim_x // 2, 0),
-    ))
+             (dim_x // 2 - 1, dim_y - 1), (dim_x // 2, dim_y - 1), (0, dim_y//2), (0, dim_y//2-1),(dim_x // 2 - 1, 0), (dim_x // 2, 0)))
 
     # fire_cells = {(4, 4), (4, 5), (5, 4), (5, 5)}
-    rec_fire = Rectangle(int((dim_x - 2) / 2)-4, int((dim_y - 2) / 2), 1, 1)
+    rec_fire = Rectangle(int((dim_x - 2) / 2), int((dim_y - 2) / 2) - 4, 1, 1)
     fire_cells = set(rec_fire.all_coordinates())
     update_fire()
     init_walls(exit_cells)
 
-    Assign obstacle
-    obstacal1 = Rectangle(10, 2 , 1, 15)
+    # Assign obstacle
+    obstacal1 = Rectangle(10, int((dim_y - 2) / 2), 6, 1)
     init_obstal(obstacal1.all_coordinates())
-
-    obstacal2 = Rectangle(23, 3, 0, 15)
-    init_obstal(obstacal2.all_coordinates())
-
-    obstacal2 = Rectangle(25, 14, 1, 10)
-    init_obstal(obstacal2.all_coordinates())
+    #
+    # obstacal = Rectangle(9, 2, 5, 1)
+    # init_obstal(obstacal.all_coordinates())
+    #
+    # obstacal2 = Rectangle(23, 3, 0, 15)
+    # init_obstal(obstacal2.all_coordinates())
+    #
+    # obstacal2 = Rectangle(25, 14, 0, 10)
+    # init_obstal(obstacal2.all_coordinates())
 
     # sff
     init_sff(exit_cells)
     # Assign pedestrains
+    # generate_pedestrain((1, dim_y-2))
+    # generate_pedestrain((dim_x-2, dim_y-2))
+    # generate_pedestrain((1, 1))
+    # generate_pedestrain((dim_x-2, 1))
     rec = Rectangle(1, 1, dim_x - 3, dim_y - 3)
-    generate_pedestrain_rand(200, rec)
-    generate_pedestrain(((5, 1)))
-    print(sff)
-    print(dff)
+    # generate_pedestrain((16 ,int((dim_y - 2) / 2)-1))
+    generate_pedestrain_rand(NumofPeople, rec)
+
+    # print(sff)
+    # print(dff)
 
 
 def one_step(time):
@@ -652,19 +695,90 @@ def one_step(time):
     for i in pedestrains:
         if i.status == 0:
             i.step("max")
-            print(temp)
-            print(visual_field)
+            # print(temp)
+            # print(visual_field)
 
     update_dff()
-    print("D: \n", dff)
+    # print("D: \n", dff)
 
 
 def test():
-    init()
-    for i in range(4):
-        one_step(i)
+    global left, dead, exited, panic, time
+    fig, ax = plt.subplots(2, 2, figsize=(20, 10))
+    ax[0][0].set_ylabel('Number of People Left')
+    ax[0][1].set_ylabel('Number of People Dead')
+    ax[1][0].set_ylabel('Number of People Exited')
+    ax[1][1].set_ylabel('Number of People Panic')
+    fig.text(0.5, 0.04, 'Time Step', ha='center')
+    parameter_list = [2,4,6,8,10,20]
+    # parameter_list = [frozenset((
+    #         (dim_x // 2 - 1, dim_y - 1), (dim_x // 2, dim_y - 1))), frozenset((
+    #         (dim_x // 2 - 1, dim_y - 1), (dim_x // 2, dim_y - 1), (dim_x // 2 - 2, dim_y - 1), (dim_x // 2 + 1, dim_y - 1))), frozenset((
+    #         (dim_x // 2 - 1, dim_y - 1), (dim_x // 2, dim_y - 1), (dim_x // 2 -2, dim_y - 1), (dim_x // 2 + 1, dim_y - 1),(dim_x // 2 -3, dim_y - 1), (dim_x // 2 + 2, dim_y - 1))), frozenset((
+    #         (dim_x // 2 - 1, dim_y - 1), (dim_x // 2, dim_y - 1), (dim_x // 2 -2, dim_y - 1), (dim_x // 2 + 1, dim_y - 1),(dim_x // 2 -3, dim_y - 1), (dim_x // 2 + 2, dim_y - 1),(dim_x // 2 - 4, dim_y - 1), (dim_x // 2 + 3, dim_y - 1)))]
+    color = ['r', 'g', 'b', 'm', 'k', 'y']
+    for t in range(len(color)):
+        global tf
+        tf = parameter_list[t]
+        for j in range(5):
+            init()
+            for i in range(frame):
+                if i == 0:  # skip 0
+                    record(i)
+                    continue
+                one_step(i)
+                record(i)
+            if j == 0:
+                left_loc = left
+                dead_loc = dead
+                exited_loc = exited
+                panic_loc = panic
+            else:
+                left_loc += left
+                dead_loc += dead
+                exited_loc += exited
+                panic_loc += panic
+        left = left_loc / 5
+        dead = dead_loc / 5
+        exited = exited_loc / 5
+        panic = panic_loc / 5
+        print(t, dead)
+        sep_plot(fig, ax, color[t], "fire evolution frequency = {}".format(tf))
+    fig.legend()
+    plt.subplots_adjust(left=0.1,
+                        bottom=0.1,
+                        right=0.9,
+                        top=0.9,
+                        wspace=0.5,
+                        hspace=0.5)
+    plt.savefig(file_name[:-3] + "png")
+
+
+def test2():
+    global left, dead, exited, panic, time
+    fig, ax = plt.subplots(figsize=(20, 10))
+    ax.set_ylabel('Number of People Dead')
+    fig.text(0.5, 0.04, 'fire evolution frequency', ha='center')
+    dead_count = []
+    tf_list = []
+    for t in range(2, 10, 1):
+        global tf
+        tf = t
+        count = 0
+        for j in range(3):
+            init()
+            for i in range(500):
+                one_step(i)
+            for k in pedestrains:
+                if k.status == 2:
+                    count += 1
+        dead_count.append(count / 3)
+        tf_list.append(tf)
+        print(dead_count, '/n', tf_list, '/n')
+    ax.plot(tf_list, dead_count, linewidth=1.0)
+    plt.savefig(file_name[:-3] + "png")
 
 
 animate()
-plot()
+# plot()
 # test()
